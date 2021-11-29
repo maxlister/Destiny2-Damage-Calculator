@@ -10,7 +10,7 @@ module BuffsDebuffs
   )
 where
 
-import Data.Maybe (catMaybes, fromJust)
+import Data.Maybe (catMaybes, fromJust, fromMaybe)
 
 data Buff
   = StackableBuff
@@ -65,12 +65,12 @@ trimGlobalBuffs :: [Buff] -> [Buff]
 trimGlobalBuffs bs = maybeCons (maybeMaximum [b | b@GlobalBuff {} <- bs]) [b | b@StackableBuff {} <- bs]
 
 trimDebuffs :: [Debuff] -> [Debuff]
-trimDebuffs bs =
+trimDebuffs dbs =
   if length x == 2
     then x
-    else fromJust $ maybeMaximum [b | b@GlobalDebuff {} <- bs] >>= (\x -> Just [x])
+    else maybeCons (maybeMaximum dbs) []
   where
-    x = filter ((`elem` ["Divinity", "Particle Deconstruction"]) . debuffName) bs
+    x = filter ((`elem` ["Divinity", "Particle Deconstruction"]) . debuffName) dbs
 
 calcBuffStack :: [Buff] -> Float
 calcBuffStack = multBuffs . trimGlobalBuffs
