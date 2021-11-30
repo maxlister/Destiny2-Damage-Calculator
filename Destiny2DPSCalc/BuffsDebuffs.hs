@@ -10,7 +10,8 @@ module BuffsDebuffs
   )
 where
 
-import Data.Maybe (catMaybes, fromJust, fromMaybe)
+import Data.Maybe (fromMaybe)
+import qualified Data.List.NonEmpty as NonEmpty
 
 data Buff
   = StackableBuff
@@ -53,22 +54,21 @@ printBuffs = unlines . map printBuff
 printDebuffs :: [Debuff] -> String
 printDebuffs = unlines . map printDebuff
 
-maybeMaximum :: Ord a => [a] -> Maybe a
-maybeMaximum [] = Nothing
-maybeMaximum xs = Just $ maximum xs
+safeMaximum :: Ord a => [a] -> Maybe a
+safeMaximum = fmap maximum . NonEmpty.nonEmpty
 
-maybeCons :: Maybe a -> [a] -> [a]
-maybeCons Nothing bs = bs
-maybeCons (Just b) bs = b : bs
+safeCons :: Maybe a -> [a] -> [a]
+safeCons Nothing bs = bs
+safeCons (Just b) bs = b : bs
 
 trimGlobalBuffs :: [Buff] -> [Buff]
-trimGlobalBuffs bs = maybeCons (maybeMaximum [b | b@GlobalBuff {} <- bs]) [b | b@StackableBuff {} <- bs]
+trimGlobalBuffs bs = safeCons (safeMaximum [b | b@GlobalBuff {} <- bs]) [b | b@StackableBuff {} <- bs]
 
 trimDebuffs :: [Debuff] -> [Debuff]
 trimDebuffs dbs =
   if length x == 2
     then x
-    else maybeCons (maybeMaximum dbs) []
+    else safeCons (safeMaximum dbs) []
   where
     x = filter ((`elem` ["Divinity", "Particle Deconstruction"]) . debuffName) dbs
 
